@@ -12,7 +12,7 @@ class RobotConfig:
 
 @dataclass
 class VisionConfig:
-    camera: int = 2 #0 for default, 2 for robot eyes
+    garg: int = 1
 
 @dataclass
 class SystemConfig:

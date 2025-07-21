@@ -1,19 +1,19 @@
 from ultralytics import YOLO
 from camera_interface import Camera
-import torch
+#import torch
 import cv2
 
 
 class Tracker:
     def __init__(self, camera: Camera):
         self.camera = camera
-        x, y = camera.get_resolution()
-        self.curr_pos = (int(x / 2), int(y / 2))
+        self.width, self.height = camera.get_resolution()
+        self.curr_pos = (int(self.width / 2), int(self.height / 2))
 
         self.model = YOLO("yolov10n.pt")
 
         # Load model
-        self.model = torch.hub.load('deepcam-cn/yolov5-face', 'yolov5s-face', pretrained=True)
+        #self.model = torch.hub.load('deepcam-cn/yolov5-face', 'yolov5s-face', pretrained=True)
 
         self.class_names = self.model.names
 
@@ -29,8 +29,10 @@ class Tracker:
             cls_id = int(box.cls)
             if self.class_names[cls_id] == "person":
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                
-                self.curr_pos = (int(x1 + abs(x2 - x1)/2), int(y1 + abs(y2 - y1)/2))
+
+                pos_relto_camera = (int(x1 + abs(x2 - x1)/2), int(y1 + abs(y2 - y1)/2))
+
+                self.curr_pos = (pos_relto_camera[0] - self.width, pos_relto_camera[1] - self.height)
                 break
 
 

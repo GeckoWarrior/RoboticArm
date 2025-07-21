@@ -1,6 +1,5 @@
 from ultralytics import YOLO
 from camera_interface import Camera
-#import torch
 import cv2
 
 
@@ -32,11 +31,16 @@ class Tracker:
 
                 pos_relto_camera = (int(x1 + abs(x2 - x1)/2), int(y1 + abs(y2 - y1)/2))
 
-                self.curr_pos = (pos_relto_camera[0] - self.width, pos_relto_camera[1] - self.height)
+                cv2.circle(frame, pos_relto_camera, radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
+
+                self.curr_pos = (int(pos_relto_camera[0] - (self.width / 2)), int(self.height - pos_relto_camera[1] - (self.height / 2)))
+
+                print("Abs Pos is: ", self.curr_pos)
+
                 break
 
 
-        cv2.circle(frame, self.curr_pos, radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
+        
         # Display the frame in a window
 
         #resized = cv2.resize(frame, (640, 480))

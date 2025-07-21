@@ -9,10 +9,10 @@ class RobotController:
         self.desired_pose = None  # 6D target position
         self.motion_model = SmoothMotionModel(config)
 
-    def set_target_pose(self, pose6d):
+    def set_target_rel_pose(self, pose6d):
         self.target_pose = pose6d
     
-    def set_desired_pose(self, pose6d):
+    def set_desired_rel_pose(self, pose6d):
         self.desired_pose = pose6d
 
     def update(self, dt):

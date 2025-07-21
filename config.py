@@ -9,6 +9,7 @@ class RobotConfig:
     max_linear_speed: float = 0.1  # m/s
     max_rotational_speed: float = 0.2  # rad/s
     acceleration: float = 0.3  # m/s²
+    default_desired_rel_pose: list[float] = (0, 0, 0.5, 0, 0, 0)  # 6D relative pose
 
 @dataclass
 class VisionConfig:

@@ -5,6 +5,7 @@ from control.robot_controller import RobotController
 from control.moving_target import MovingTarget
 from utils.timing import Clock
 from utils.visualizer import Visualizer
+from utils.transforms import apply_relative_pose
 
 
 def main():
@@ -23,7 +24,7 @@ def main():
 
     # Setup controller and timer
     controller = RobotController(robot, config)
-    controller.set_desired_pose([0, 0, 0.5, 0, 0, 0]) # TODO: tmp - read from config
+    controller.set_desired_rel_pose(config.robot.default_desired_rel_pose)
 
     clk = Clock(config.robot.target_dt)
 
@@ -33,10 +34,10 @@ def main():
     try:
         while True:
             dt = clk.tick()
-            target_pose = target.get_target_pose(dt)
-            controller.set_target_pose(target_pose)  # You may need to implement this
+            target_rel_pose = target.get_target_rel_pose(dt)
+            controller.set_target_rel_pose(target_rel_pose)
             controller.update(dt)
-            visualizer.update(robot.get_tcp_pose(), target_pose + robot.get_tcp_pose())
+            visualizer.update(robot.get_tcp_pose(), apply_relative_pose(robot.get_tcp_pose(), target_rel_pose))
     except KeyboardInterrupt:
         robot.stop()
 

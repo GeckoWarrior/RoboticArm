@@ -53,5 +53,11 @@ class Tracker:
 
 
 
-    def get_curr_position(self):
-        return self.curr_pos
+    def get_target_rel_pose(self, dt):
+
+        x, y = self.curr_pos
+        z = 0.5
+
+        rx, ry, rz = 0, 0, 0
+
+        return [x, y, z, rx, ry, rz]

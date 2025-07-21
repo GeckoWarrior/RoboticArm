@@ -5,3 +5,11 @@ vision/__pycache__/camera_interface.cpython-39.pyc
 vision/__pycache__/camera_interface.cpython-312.pyc
 vision/__pycache__/tracker.cpython-312.pyc
 vision/__pycache__/tracker.cpython-39.pyc
+__pycache__/config.cpython-310.pyc
+control/__pycache__/motion_model.cpython-310.pyc
+control/__pycache__/moving_target.cpython-310.pyc
+control/__pycache__/robot_controller.cpython-310.pyc
+control/__pycache__/robot_interface.cpython-310.pyc
+control/__pycache__/robot_simulator.cpython-310.pyc
+utils/__pycache__/timing.cpython-310.pyc
+utils/__pycache__/visualizer.cpython-310.pyc

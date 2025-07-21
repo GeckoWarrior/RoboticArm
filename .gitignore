@@ -1,2 +1,7 @@
 Img_Procc/*
 stuff/*
+yolov10n.pt
+vision/__pycache__/camera_interface.cpython-39.pyc
+vision/__pycache__/camera_interface.cpython-312.pyc
+vision/__pycache__/tracker.cpython-312.pyc
+vision/__pycache__/tracker.cpython-39.pyc

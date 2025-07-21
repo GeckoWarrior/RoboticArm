@@ -2,7 +2,7 @@ from tracker import Tracker
 from camera_interface import Camera
 
 
-camera = Camera(0, 1920, 1080)
+camera = Camera("laptop")
 
 tracker = Tracker(camera)
 

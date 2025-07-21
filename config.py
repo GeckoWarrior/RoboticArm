@@ -13,7 +13,7 @@ class RobotConfig:
 
 @dataclass
 class VisionConfig:
-    garg: int = 1
+    cam: str = "robot" # "laptop" or "robot"
 
 @dataclass
 class SystemConfig:

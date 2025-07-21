@@ -6,11 +6,16 @@ from control.moving_target import MovingTarget
 from utils.timing import Clock
 from utils.visualizer import Visualizer
 from utils.transforms import apply_relative_pose
-
+from vision.tracker import Tracker
+from vision.camera_interface import Camera
 
 def main():
     config = Config()
     visualizer = Visualizer()
+
+    # ==== vision ====
+    camera = Camera(config.vision.cam)
+    camera.setup()
 
     # Choose robot interface
     if config.system.mode == "live":
@@ -29,14 +34,20 @@ def main():
     clk = Clock(config.robot.target_dt)
 
     # Optionally add a moving target - IF SIM
-    target = MovingTarget(robot) # cam later
+    #target = MovingTarget(robot) # cam later
+    target = Tracker(camera)
 
     try:
         while True:
             dt = clk.tick()
+
+            camera.update()
+            target.update()
+            
             target_rel_pose = target.get_target_rel_pose(dt)
             controller.set_target_rel_pose(target_rel_pose)
             controller.update(dt)
+            
             visualizer.update(robot.get_tcp_pose(), apply_relative_pose(robot.get_tcp_pose(), target_rel_pose))
     except KeyboardInterrupt:
         robot.stop()

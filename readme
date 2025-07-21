@@ -1,1 +1,18 @@
-Here will be a great project!
+RoboticArm/
+├── config.py                # IPs, robot params, camera settings, etc.
+├── main.py                  # Entry point — high-level orchestration
+│
+├── control/                 # All robot-related code
+│   ├── __init__.py
+│   ├── robot_interface.py   # OOP class wrapping RTDE control/receive
+│   ├── robot_controller.py  # Higher-level logic (e.g., follow target pose)
+│   └── motion_model.py      # Smooth interpolation, velocity planning
+│
+├── vision/                  # All image processing & pose estimation
+│   ├── __init__.py
+│   ├── tracker.py           # Object tracking / pose estimation
+│   └── camera_interface.py  # Abstraction over camera input
+│
+└── utils/                   # General helpers
+    ├── timing.py            # TimeSync, dt calculation, etc.
+    └── transforms.py        # Coordinate system utilities, quaternions, etc.

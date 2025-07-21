@@ -13,7 +13,7 @@ class RobotConfig:
 
 @dataclass
 class VisionConfig:
-    dummy: str = "dummy"
+    garg: int = 1
 
 @dataclass
 class SystemConfig:

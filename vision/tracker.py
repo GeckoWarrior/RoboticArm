@@ -1,19 +1,18 @@
 from ultralytics import YOLO
 from camera_interface import Camera
-import torch
 import cv2
 
 
 class Tracker:
     def __init__(self, camera: Camera):
         self.camera = camera
-        x, y = camera.get_resolution()
-        self.curr_pos = (int(x / 2), int(y / 2))
+        self.width, self.height = camera.get_resolution()
+        self.curr_pos = (int(self.width / 2), int(self.height / 2))
 
         self.model = YOLO("yolov10n.pt")
 
         # Load model
-        self.model = torch.hub.load('deepcam-cn/yolov5-face', 'yolov5s-face', pretrained=True)
+        #self.model = torch.hub.load('deepcam-cn/yolov5-face', 'yolov5s-face', pretrained=True)
 
         self.class_names = self.model.names
 
@@ -29,12 +28,19 @@ class Tracker:
             cls_id = int(box.cls)
             if self.class_names[cls_id] == "person":
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                
-                self.curr_pos = (int(x1 + abs(x2 - x1)/2), int(y1 + abs(y2 - y1)/2))
+
+                pos_relto_camera = (int(x1 + abs(x2 - x1)/2), int(y1 + abs(y2 - y1)/2))
+
+                cv2.circle(frame, pos_relto_camera, radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
+
+                self.curr_pos = (int(pos_relto_camera[0] - (self.width / 2)), int(self.height - pos_relto_camera[1] - (self.height / 2)))
+
+                print("Abs Pos is: ", self.curr_pos)
+
                 break
 
 
-        cv2.circle(frame, self.curr_pos, radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
+        
         # Display the frame in a window
 
         #resized = cv2.resize(frame, (640, 480))
@@ -47,5 +53,11 @@ class Tracker:
 
 
 
-    def get_curr_position(self):
-        return self.curr_pos
+    def get_target_rel_pose(self, dt):
+
+        x, y = self.curr_pos
+        z = 0.5
+
+        rx, ry, rz = 0, 0, 0
+
+        return [x, y, z, rx, ry, rz]

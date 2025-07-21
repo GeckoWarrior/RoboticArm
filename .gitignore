@@ -1,5 +1,7 @@
 Img_Procc/*
 stuff/*
+yolov10n.pt
 __pycache__/*
+vision/__pycache__/*
 control/__pycache__/*
 utils/__pycache__/*

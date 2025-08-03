@@ -1,6 +1,8 @@
 from typing import List
 from scipy.spatial.transform import Rotation as R
 from config import RobotConfig
+from utils.transforms import pose_to_matrix, matrix_to_pose
+import numpy as np
 
 class SmoothMotionModel:
     def __init__(self, config: RobotConfig):
@@ -10,6 +12,7 @@ class SmoothMotionModel:
 
     def compute_velocity(
         self,
+        tcp_base_pose: List[float],
         target_relative_pose: List[float],
         desired_relative_pose: List[float],
         dt: float
@@ -19,13 +22,53 @@ class SmoothMotionModel:
         such that the target appears at the desired relative position.
         Inputs and outputs are in 6D (3 pos, 3 rot).
         
+        :param tcp_base_pose: [dx, dy, dz, rx, ry, rz] camera in base (axis-angle)
         :param target_relative_pose: [dx, dy, dz, rx, ry, rz] from camera (axis-angle)
-        :param desired_relative_pose: [dx, dy, dz, rx, ry, rz] (axis-angle)
+        :param desired_relative_pose: [dx, dy, dz, rx, ry, rz] from camera (axis-angle)
         :param dt: time delta in seconds
         :return: velocity vector [vx, vy, vz, wx, wy, wz]
         """
+        assert len(tcp_base_pose) == 6
         assert len(target_relative_pose) == 6
         assert len(desired_relative_pose) == 6
+
+        """
+        HOW
+        1: 
+        figure out where the tool should be in tool space
+            - calc the error from target and desired
+            - respect it to the tcp (the inv trasformation of that)
+
+        2:
+        figure out where the tool should be in base space
+            - transform the error vec from 1
+        
+        3:
+        construct a velocity vector
+            - translation is lerp?
+            - rotation is slerp?
+            - capped to the max velocities
+        """
+
+        # Convert poses to matrices
+        T_tcp_base = pose_to_matrix(tcp_base_pose)
+        T_target_tool = pose_to_matrix(target_relative_pose)
+        T_desired_tool = pose_to_matrix(desired_relative_pose)
+
+        # Calculate the error in the tool frame (desired^-1 * target)
+        T_err_tool = np.linalg.inv(T_desired_tool) @ T_target_tool
+
+        # Transform the error into the base frame
+        T_err_base = T_tcp_base @ T_err_tool @ np.linalg.inv(T_tcp_base)
+
+        # Convert error transformation to velocity twist
+        twist = matrix_to_pose(T_err_base)
+
+        # Scale by dt to get velocity
+        velocity = twist / dt
+        return velocity.tolist()
+
+
 
         # --- Linear velocity control (same as before) ---
         lin_error = [

@@ -19,5 +19,5 @@ class RobotController:
         if not self.target_pose:
             return
 
-        vel = self.motion_model.compute_velocity(self.target_pose, self.desired_pose, dt)
+        vel = self.motion_model.compute_velocity(self.robot.get_tcp_pose() ,self.target_pose, self.desired_pose, dt)
         self.robot.move_velocity(vel, acceleration=0.3, dt=dt)

@@ -1,5 +1,5 @@
 from ultralytics import YOLO
-from camera_interface import Camera
+from vision.camera_interface import Camera
 import cv2
 
 

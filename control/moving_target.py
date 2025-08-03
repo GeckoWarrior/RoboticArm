@@ -16,7 +16,7 @@ class MovingTarget:
         z = 0.3
         
         r_pose = np.array(self.robot.get_tcp_pose())
-        t_pose = np.array([x, y, z, 0, 0, 0])
+        t_pose = np.array([x, y, z, self.t, 0, 0])
 
         # relative pose to the robot:
         rel_pose = get_relative_pose(r_pose, t_pose)

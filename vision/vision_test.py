@@ -2,7 +2,8 @@ from tracker import Tracker
 from camera_interface import Camera
 
 
-camera = Camera("laptop")
+camera = Camera("robot")
+camera.setup()
 
 tracker = Tracker(camera)
 

@@ -14,6 +14,7 @@ class RobotConfig:
 @dataclass
 class VisionConfig:
     cam: str = "robot" # "laptop" or "robot"
+    depth: int = 0.5
 
 @dataclass
 class SystemConfig:

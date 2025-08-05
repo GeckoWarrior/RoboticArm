@@ -1,6 +1,6 @@
 from enum import Enum
 from ultralytics import YOLO
-from camera_interface import Camera
+from vision.camera_interface import Camera
 import cv2
 from deep_sort_realtime.deepsort_tracker import DeepSort
 import numpy as np
@@ -13,7 +13,7 @@ import contextlib
 import sys
 import os
 
-import config
+from config import Config
 
 
 @contextlib.contextmanager
@@ -45,6 +45,8 @@ def screen_to_camera_coords(u, v, z, K):
     Returns:
         3D point (x, y, z) in camera coordinate system
     """
+
+    
     fx, fy = K[0, 0], K[1, 1]
     cx, cy = K[0, 2], K[1, 2]
 
@@ -61,23 +63,29 @@ class TrackerState(Enum):
     TRACK = 2
 
 class TrackedObj:
-    def __init__(self, id: int, x: int, y: int, z: int):
+    def __init__(self, id: int, x: int, y: int, z: int, K):
         self.id = id
         self.x = x
         self.y = y
         self.z = z
 
-        self.camx, self.camy, z = screen_to_camera_coords(x, y, z, K)
+        self.K = np.array(K)
+
+        self.camx, self.camy, z = screen_to_camera_coords(x, y, z, self.K)
     
     def update(self, x, y):
         self.x = x
         self.y = y
 
-        self.camx, self.camy, z = screen_to_camera_coords(x, y, self.z, K)
+        self.camx, self.camy, z = screen_to_camera_coords(x, y, self.z, self.K)
+
+        print("X is: ", self.camx)
+
+        print("Y is: ", self.camy)
 
 
 class Tracker:
-    def __init__(self, camera: Camera):
+    def __init__(self, camera: Camera, config: Config):
         self.camera = camera
         self.width, self.height = camera.get_resolution()
 
@@ -87,12 +95,15 @@ class Tracker:
         
         self.state = TrackerState.INIT  # Initialize with INIT state
 
-        self.tracked_obj = TrackedObj(-1, -1, -1, -1)
+        self.tracked_obj = None
 
         self.tracker = DeepSort()
 
-        self.depth_model = pipeline(task="depth-estimation", model="depth-anything/Depth-Anything-V2-Small-hf")
-            
+        self.config = config
+
+        #self.depth_model = pipeline(task="depth-estimation", model="depth-anything/Depth-Anything-V2-Small-hf")
+
+
 
         
 
@@ -171,7 +182,7 @@ class Tracker:
                             min_id = track_id
                 
                 if min_id != -1:
-                    self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], z=config.VisionConfig.depth)
+                    self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], z=self.config.vision.depth, K=self.config.vision.K)
 
                     self.state = TrackerState.TRACK
                     print("Switching state: INIT -> TRACK")

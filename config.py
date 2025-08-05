@@ -1,6 +1,6 @@
 # config/config.py
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class RobotConfig:
@@ -15,7 +15,7 @@ class RobotConfig:
 class VisionConfig:
     cam: str = "robot" # "laptop" or "robot"
     depth: int = 0.5
-    K: list[list[float]] = [[598.85657176, 0, 319.35979167], [0, 598.52225975, 244.8183713], [0, 0, 1]]
+    K:  list = field(default_factory=lambda: [[598.85657176, 0, 319.35979167], [0, 598.52225975, 244.8183713], [0, 0, 1]])
 
 @dataclass
 class SystemConfig:

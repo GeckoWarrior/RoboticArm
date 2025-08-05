@@ -9,11 +9,11 @@ from utils.transforms import apply_relative_pose
 from vision.tracker import Tracker
 from vision.camera_interface import Camera
 import time
+import traceback
 
 def main():
     config = Config()
     visualizer = Visualizer()
-    # visualizer2 = Visualizer() # for camera view
 
     # ==== vision ====
     # camera = Camera(config.vision.cam)
@@ -21,7 +21,7 @@ def main():
 
     # Choose robot interface
     if config.system.mode == "live":
-        robot = RoboticArm(config.robot.ip)
+        robot = RoboticArm(config)
     else:
         robot = SimulatedRoboticArm()
 
@@ -51,9 +51,15 @@ def main():
             controller.update(dt)
 
             visualizer.update(robot.get_tcp_pose(), apply_relative_pose(robot.get_tcp_pose(), target_rel_pose))
-            # visualizer2.update(config.robot.default_desired_rel_pose, target_rel_pose)
     except KeyboardInterrupt:
         robot.stop()
+
+    except Exception as e:
+        print("RTDE connection error:", str(e))
+        traceback.print_exc()
+        # Try to disconnect cleanly
+        robot.stop()
+
 
 
 if __name__ == "__main__":

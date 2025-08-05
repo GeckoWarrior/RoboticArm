@@ -9,7 +9,7 @@ class Visualizer:
     AXIS_WIDTH = 3
     AXIS_COLORS = ['red', 'green', 'blue']
 
-    def __init__(self, xlim=(-1, 1), ylim=(-1, 1), zlim=(0, 2)):
+    def __init__(self, xlim=(-1, 1), ylim=(-1, 1), zlim=(-1, 0)):
         # pv.set_plot_theme('dark')
         self.plotter = pv.Plotter(window_size=[400, 300])
         self.plotter.set_background('white')

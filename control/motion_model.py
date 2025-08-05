@@ -1,8 +1,59 @@
 from typing import List
 from scipy.spatial.transform import Rotation as R
 from config import RobotConfig
-from utils.transforms import pose_to_matrix, matrix_to_pose
+from utils.transforms import pose_to_matrix, matrix_to_pose, apply_relative_pose
 import numpy as np
+import math
+
+
+
+class PositionalMotionModel:
+    def __init__(self, config: RobotConfig):
+        self.max_lin = config.robot.max_linear_speed
+
+    def compute_velocity(
+        self,
+        tcp_base_pose: List[float],
+        target_relative_pose: List[float],
+        desired_relative_pose: List[float],
+        dt: float
+    ) -> List[float]:
+        """
+        Computes the velocity vector needed to move the end-effector
+        such that the target appears at the desired relative position.
+        Inputs and outputs are in 6D (3 pos, 3 rot).
+
+        The PositionalMotionModel igonres the rotation values, and only sets the postion correctly!
+        
+        :param tcp_base_pose: [dx, dy, dz, rx, ry, rz] camera in base (axis-angle)
+        :param target_relative_pose: [dx, dy, dz, rx, ry, rz] from camera (axis-angle)
+        :param desired_relative_pose: [dx, dy, dz, rx, ry, rz] from camera (axis-angle)
+        :param dt: time delta in seconds
+        :return: velocity vector [vx, vy, vz, wx=0, wy=0, wz=0] (rotations are ignored)
+        """
+        assert len(tcp_base_pose) == 6
+        assert len(target_relative_pose) == 6
+        assert len(desired_relative_pose) == 6
+
+        # Step 1: Compute the position error
+        target_pos = target_relative_pose[:3]
+        desired_pos = desired_relative_pose[:3]
+        position_error = [target_pos[i] - desired_pos[i]  for i in range(3)]
+
+        # Step 2: Compute raw linear velocity
+        linear_velocity = [error / dt for error in position_error]
+
+        # Step 3: Clamp linear velocity to max_lin
+        norm = math.sqrt(sum(v ** 2 for v in linear_velocity))
+        if norm > self.max_lin and norm > 1e-8:
+            scale = self.max_lin / norm
+            linear_velocity = [v * scale for v in linear_velocity]
+
+        # Step 4: Append zero rotation velocities
+        return apply_relative_pose(tcp_base_pose, linear_velocity + [0, 0, 0])
+
+
+
 
 class SmoothMotionModel:
     def __init__(self, config: RobotConfig):
@@ -66,6 +117,13 @@ class SmoothMotionModel:
 
         # Scale by dt to get velocity
         velocity = twist / dt
+
+        # Clamp linear velocity
+        for i in range(3):
+            velocity[i] = max(min(velocity[i], self.max_lin), -self.max_lin)
+        for i in range(3):
+            velocity[i + 3] = max(min(velocity[i + 3], self.max_rot), -self.max_rot)
+
         return velocity.tolist()
 
 

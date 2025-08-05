@@ -1,5 +1,5 @@
 from control.robot_interface import RoboticArm
-from control.motion_model import SmoothMotionModel
+from control.motion_model import SmoothMotionModel, PositionalMotionModel
 from config import Config
 
 class RobotController:
@@ -7,7 +7,7 @@ class RobotController:
         self.robot = robot
         self.target_pose = None  # 6D target position
         self.desired_pose = None  # 6D target position
-        self.motion_model = SmoothMotionModel(config)
+        self.motion_model = PositionalMotionModel(config)# SmoothMotionModel(config)
 
     def set_target_rel_pose(self, pose6d):
         self.target_pose = pose6d
@@ -20,4 +20,5 @@ class RobotController:
             return
 
         vel = self.motion_model.compute_velocity(self.robot.get_tcp_pose() ,self.target_pose, self.desired_pose, dt)
+        # vel[2] = 0
         self.robot.move_velocity(vel, acceleration=0.3, dt=dt)

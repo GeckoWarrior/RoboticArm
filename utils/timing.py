@@ -19,6 +19,8 @@ class Clock:
 
         if wait_time > 0:
             time.sleep(wait_time)
+        else:
+            print("Overclocking!", self.target_dt - elapsed, flush=False)
 
         current_time = time.time()
         actual_dt = current_time - self.last_time

@@ -3,8 +3,9 @@ from rtde_receive import RTDEReceiveInterface as RTDEReceive
 
 
 class RoboticArm:
-    def __init__(self, ip):
-        self.ip = ip
+    def __init__(self, config):
+        self.ip = config.robot.ip
+        self.freq = int(1/config.robot.target_dt)
         self.rtde_c = None
         self.rtde_r = None
         self.ready = False

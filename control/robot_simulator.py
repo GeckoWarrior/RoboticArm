@@ -3,6 +3,9 @@ import numpy as np
 class SimulatedRoboticArm:
     def __init__(self):
         self.pose = np.zeros(6)  # x, y, z, rx, ry, rz
+        self.pose[3] = 1
+        self.pose[4] = 0
+        self.pose[5] = 2
         self.velocity = np.zeros(6)
 
     def setup(self):

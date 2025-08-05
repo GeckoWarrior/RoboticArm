@@ -1,8 +1,19 @@
 import cv2
+import time
 
-def capture_image_from_camera(camera_index=0, save_path="calibrate_imgs/01.jpg"):
+def capture_image_from_camera():
     # Open the camera (0 = default camera)
-    cap = cv2.VideoCapture(camera_index)
+
+    camera_list = []
+    for index in range(10):
+        cap = cv2.VideoCapture(index)
+        if cap.read()[0]:
+            camera_list.append(index)
+            cap.release()
+        else:
+            cap.release()
+
+    cap = cv2.VideoCapture(camera_list[1])
     
     if not cap.isOpened():
         print("Error: Could not open camera.")
@@ -26,9 +37,10 @@ def capture_image_from_camera(camera_index=0, save_path="calibrate_imgs/01.jpg")
             print("Exiting without saving.")
             break
         elif key == 32:  # SPACE to capture
+            save_path = f"calibration_imgs/{time.time()}.jpg"
             cv2.imwrite(save_path, frame)
             print(f"Image saved to {save_path}")
-            break
+            
     
     cap.release()
     cv2.destroyAllWindows()

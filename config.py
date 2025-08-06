@@ -14,7 +14,7 @@ class RobotConfig:
 @dataclass
 class VisionConfig:
     cam: str = "robot" # "laptop" or "robot"
-    depth: int = 0.5
+    tennis_diameter: float = 0.0658
     K:  list = field(default_factory=lambda: [[598.85657176, 0, 319.35979167], [0, 598.52225975, 244.8183713], [0, 0, 1]])
 
 @dataclass

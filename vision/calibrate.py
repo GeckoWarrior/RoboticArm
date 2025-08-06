@@ -3,7 +3,7 @@ import numpy as np
 import glob
 
 # 1. Define checkerboard dimensions
-checkerboard_size = (9, 6)  # (columns, rows of internal corners)
+checkerboard_size = (8, 5)  # (columns, rows of internal corners)
 square_size = 1.0  # any unit (e.g. 1.0 cm)
 
 # 2. Prepare object points like (0,0,0), (1,0,0), ..., (8,5,0)
@@ -17,6 +17,7 @@ imgpoints = []  # 2D points in image plane
 
 # 4. Load calibration images
 images = glob.glob('calibration_imgs/*.jpg')  # Put your checkerboard images here
+print(f"Found {len(images)} images.")
 
 for fname in images:
     img = cv2.imread(fname)

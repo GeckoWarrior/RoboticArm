@@ -46,3 +46,23 @@ pixels to (x,y,z):
 1. get the x,y on screen space.
 2. set the z value (hardcoded or by model)
 3. apply inv of the projection (need some camera measurments)
+
+
+
+
+=====================
+
+System pipline:
+
+1. camera captures obj in screen space.
+2. convertion to camera space. (x,y,z,0,0,0)
+3. target position in camera space is passed to the control.
+4. We got:
+   - t_pose (cam space)
+   - d_pose (cam space)
+   - r_pose (in world space) 
+
+We need to transform t_pose to d_pose by changing r_pose
+
+t_pose_w = r_pose @ t_pose
+d_pose_w = r_pose @ d_pose

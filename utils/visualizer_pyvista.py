@@ -1,6 +1,7 @@
 import numpy as np
 import pyvista as pv
 from scipy.spatial.transform import Rotation as R
+from utils.transforms import pose_to_matrix
 
 class Visualizer:
     # Line styling constants
@@ -23,13 +24,15 @@ class Visualizer:
         # Create robot and target spheres once
         self.robot_sphere = pv.Sphere(radius=self.RADIUS)
         self.target_sphere = pv.Sphere(radius=self.RADIUS)
+        self.cam_sphere = pv.Cube(x_length=self.RADIUS, y_length=self.RADIUS, z_length=self.RADIUS)
 
         self.robot_actor = self.plotter.add_mesh(self.robot_sphere, color='blue')
         self.target_actor = self.plotter.add_mesh(self.target_sphere, color='red')
+        self.cam_actor = self.plotter.add_mesh(self.target_sphere, color='green')
 
         # Create axis line actors once
         self.robot_axes_actors = self._create_axes_actors(opacity=1.0)
-        self.target_axes_actors = self._create_axes_actors(opacity=1.0)
+        self.cam_axes_actors = self._create_axes_actors(opacity=1.0)
 
         self.plotter.show(auto_close=False, interactive_update=True)
 
@@ -46,19 +49,13 @@ class Visualizer:
             actors.append(actor)
         return actors
 
-    def _pose_to_matrix(self, pose):
-        T = np.eye(4)
-        T[:3, 3] = pose[:3]
-        if len(pose) == 6:
-            T[:3, :3] = R.from_rotvec(pose[3:]).as_matrix()
-        return T
-
-    def update(self, robot_pose, target_pose):
-        T_robot = self._pose_to_matrix(robot_pose)
-        T_target = self._pose_to_matrix(target_pose)
+    def update(self, robot_pose, target_pos, cam_pose):
+        T_robot = pose_to_matrix(robot_pose)
+        T_cam = pose_to_matrix(cam_pose)
 
         self.robot_actor.SetPosition(*T_robot[:3, 3])
-        self.target_actor.SetPosition(*T_target[:3, 3])
+        self.cam_actor.SetPosition(*T_cam[:3, 3])
+        self.target_actor.SetPosition(target_pos)
 
         axis_unit_vectors = [np.array([1, 0, 0]),
                              np.array([0, 1, 0]),
@@ -73,10 +70,10 @@ class Visualizer:
             actor.GetMapper().SetInputData(line)
             actor.GetMapper().Update()
 
-        # Update target axes
-        for i, actor in enumerate(self.target_axes_actors):
-            origin = T_target[:3, 3]
-            direction = T_target[:3, :3] @ axis_unit_vectors[i] * self.AXIS_LENGTH
+        # Update cam axes
+        for i, actor in enumerate(self.cam_axes_actors):
+            origin = T_cam[:3, 3]
+            direction = T_cam[:3, :3] @ axis_unit_vectors[i] * self.AXIS_LENGTH
             end = origin + direction
             line = self._create_line(origin, end)
             actor.GetMapper().SetInputData(line)

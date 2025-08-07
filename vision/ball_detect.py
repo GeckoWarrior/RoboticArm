@@ -36,9 +36,6 @@ class Detector:
                     # Get the smallest rectangle around the contour
                     x, y, w, h = cv2.boundingRect(cnt)
                     bboxes.append(([x, y, w, h], 1))
-
-
-        print(bboxes)  # Each box is [x, y, w, h]
        
         return bboxes
     

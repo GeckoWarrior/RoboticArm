@@ -22,8 +22,9 @@ class RobotController:
         if self.target_camf_pos is None:
             return
         
-        pos_toolf_pos = self.target_camf_pos - np.array(self.config.robot.cam_rel_offset)
+        pos_toolf_pos = self.target_camf_pos + np.array(self.config.robot.cam_rel_offset)
 
         vel = self.motion_model.compute_velocity(tcp_pose, pos_toolf_pos, self.desired_pos, dt)
-        vel -= self.gain * self.robot.get_tcp_velocity()
+        print("vel:", list(vel[:3]))
+        # vel -= self.gain * self.robot.get_tcp_velocity()
         self.robot.move_velocity(vel, acceleration=0.3, dt=dt)

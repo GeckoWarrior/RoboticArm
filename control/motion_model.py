@@ -9,6 +9,7 @@ import math
 class PositionalMotionModel:
     def __init__(self, config: RobotConfig):
         self.max_lin = config.robot.max_linear_speed
+        self.close_distance = config.robot.close_distance
 
     def compute_velocity(
         self,
@@ -44,17 +45,24 @@ class PositionalMotionModel:
         pos_basef_desired_target = T_basef_tool @ pos_toolf_desired_target 
     
         delta_pos = homo_to_cart(pos_basef_target) - homo_to_cart(pos_basef_desired_target)
+        
+        dist = np.linalg.norm(delta_pos)
+        
+        close_dist = self.close_distance
+        max_lin = min(self.max_lin, self.max_lin * (dist / close_dist))
+        if dist < 0.01:
+            max_lin = 0
 
         v_linear = delta_pos / dt
 
         # Optional: clamp to max speed
         norm = math.sqrt(sum(v ** 2 for v in v_linear))
-        if norm > self.max_lin and norm > 1e-8:
-            scale = self.max_lin / norm
+        if norm > max_lin and norm > 1e-8:
+            scale = max_lin / norm
             v_linear *= scale
 
         # 7. Send command
-        return list(v_linear) + [0,0,0]
+        return v_linear.tolist() + [0,0,0]
     
 # class PositionalMotionModel:
 #     def __init__(self, config: RobotConfig):

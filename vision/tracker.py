@@ -6,7 +6,6 @@ from deep_sort_realtime.deepsort_tracker import DeepSort
 import numpy as np
 import math
 
-from transformers import pipeline
 from PIL import Image
 
 import contextlib
@@ -69,39 +68,41 @@ class TrackerState(Enum):
     RETRACK = 3
 
 class TrackedObj:
-    def __init__(self, id: int, x: int, y: int, width: int, type, K, config: Config):
+    def __init__(self, id: int, x: int, y: int, width: int, height: int, type, K, config: Config):
         self.id = id
         self.x = x
         self.y = y
         self.width = width
+        self.height = height
         self.K = np.array(K)
 
         if type == "tennis_ball":
             self.real_diameter = config.vision.tennis_diameter
 
-        self.z = Detector.estimate_depth_from_bbox(self.width, self.real_diameter, self.K)
+        self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
 
         self.camx, self.camy, z = screen_to_camera_coords(self.x, self.y, self.z, self.K)
     
-    def update(self, x, y, width):
+    def update(self, x, y, width, height):
         self.x = x
         self.y = y
         self.width = width
+        self.height = height
 
-        self.z = Detector.estimate_depth_from_bbox(self.width, self.real_diameter, self.K)
+        self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
         self.camx, self.camy, z = screen_to_camera_coords(x, y, self.z, self.K)
 
-        print("----------------------------------")
+        # print("----------------------------------")
 
-        print("X is: ", self.camx)
+        # print("X is: ", self.camx)
 
-        print("Y is: ", self.camy)
+        # print("Y is: ", self.camy)
 
-        print("Z is: ", self.z)
+        # print("Z is: ", self.z)
 
-        print("----------------------------------")
+        # print("----------------------------------")
 
-        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")
+        # print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")
 
 
 class Tracker:
@@ -192,6 +193,7 @@ class Tracker:
                     min_loc = (-1, -1)
                     min_id = -1
                     min_width = -1
+                    min_height = -1
 
 
                     for track in self.tracker.tracker.tracks:
@@ -217,10 +219,11 @@ class Tracker:
                                 min_loc = (center_x, center_y)
                                 min_id = track_id
                                 min_width = abs(x2 - x1)
+                                min_height = abs(y2 - y1)
                 
                     if min_id != -1:
 
-                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, self.tracked_Type , self.config.vision.K, self.config)
+                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, min_height, self.tracked_Type , self.config.vision.K, self.config)
 
                         self.state = TrackerState.TRACK
                         print("Switching state: INIT -> TRACK")
@@ -256,7 +259,7 @@ class Tracker:
                         if track_id == self.tracked_obj.id:
                             found_track = True
 
-                            self.tracked_obj.update(center_x, center_y, abs(x2 - x1))
+                            self.tracked_obj.update(center_x, center_y, abs(x2 - x1), abs(y2 - y1))
 
                             cv2.circle(frame, (center_x, center_y), radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
                         
@@ -304,6 +307,7 @@ class Tracker:
                     min_loc = (-1, -1)
                     min_id = -1
                     min_width = -1
+                    min_height = -1
 
                     for track in self.tracker.tracker.tracks:
                         if track.is_confirmed():
@@ -327,9 +331,10 @@ class Tracker:
                                 min_loc = (center_x, center_y)
                                 min_id = track_id
                                 min_width = abs(x2 - x1)
+                                min_height = abs(y2 - y1)
                     
                     if min_id != -1:
-                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, self.tracked_Type, self.config.vision.K, self.config)
+                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, min_height, self.tracked_Type, self.config.vision.K, self.config)
                         cv2.circle(frame, (min_loc[0], min_loc[1]), radius=5, color=(0, 255, 0), thickness=-1)  # red filled circle
 
 
@@ -360,7 +365,7 @@ class Tracker:
                 x_new = int(x_new)
                 y_new = int(y_new)
 
-                self.tracked_obj.update(x_new, y_new, self.tracked_obj.width)
+                self.tracked_obj.update(x_new, y_new, self.tracked_obj.width, self.tracked_obj.height)
 
 
             # Display the frame in a window
@@ -372,6 +377,12 @@ class Tracker:
             return True
             
 
-    def get_target_rel_pose(self, dt):
-        rx, ry, rz = 0, 0, 0
-        return [self.tracked_obj.camy, self.tracked_obj.camx, self.tracked_obj.z, rx, ry, rz]
+    def get_target_camf_pos(self):
+        if self.tracked_obj is None:
+            return np.array(self.config.robot.default_desired_rel_pos) - np.array(self.config.robot.cam_rel_offset)
+        
+        # return np.array(self.config.robot.default_desired_rel_pos) - np.array(self.config.robot.cam_rel_offset)
+        pos = np.array([self.tracked_obj.camx, self.tracked_obj.camy, self.tracked_obj.z])
+        print("cam:", pos)
+        print("tcp:", pos + self.config.robot.cam_rel_offset)
+        return np.array(pos)

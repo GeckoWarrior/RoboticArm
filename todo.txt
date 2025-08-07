@@ -66,3 +66,15 @@ We need to transform t_pose to d_pose by changing r_pose
 
 t_pose_w = r_pose @ t_pose
 d_pose_w = r_pose @ d_pose
+
+
+extras:
+UI select
+visualizer record
+visualizer joints
+visualizer all object
+vision multiple objects
+vision out of frame
+vision merging bbox - identify, (area vs convex)
+control/UI change desired position
+control angle control?

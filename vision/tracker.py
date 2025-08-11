@@ -68,26 +68,30 @@ class TrackerState(Enum):
     RETRACK = 3
 
 class TrackedObj:
-    def __init__(self, id: int, x: int, y: int, width: int, type, K, config: Config):
+    def __init__(self, id: int, x: int, y: int, width: int, height: int, type, K, config: Config):
         self.ids = [id]
         self.x = x
         self.y = y
         self.width = width
+        self.height = height
         self.K = np.array(K)
 
-        if type == "tennis_ball":
-            self.real_diameter = config.vision.tennis_diameter
+        self.config = config
 
-        self.z = Detector.estimate_depth_from_bbox(self.width, self.real_diameter, self.K)
+        if type == "tennis_ball":
+            self.real_diameter = self.config.vision.tennis_diameter
+
+        self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
 
         self.camx, self.camy, z = screen_to_camera_coords(self.x, self.y, self.z, self.K)
     
-    def update(self, x, y, width):
+    def update(self, x, y, width, height):
         self.x = x
         self.y = y
         self.width = width
+        self.height = height
 
-        self.z = Detector.estimate_depth_from_bbox(self.width, self.real_diameter, self.K)
+        self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
         self.camx, self.camy, z = screen_to_camera_coords(x, y, self.z, self.K)
 
         print("----------------------------------")
@@ -102,6 +106,8 @@ class TrackedObj:
 
         print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")
     
+    
+    
     def id_update(self, id):
 
         if len(self.ids) >= 15:
@@ -109,8 +115,34 @@ class TrackedObj:
         else:
             self.ids.append(id)
 
+            
+
+    def default(self):
+        desired_pos = np.array(self.config.robot.default_desired_rel_pos) - np.array(self.config.robot.cam_rel_offset)
+
+        self.camx = desired_pos[0]
+        self.camy = desired_pos[1]
+        self.z = desired_pos[2]
+
+        
+        
+        print("----------------------------------")
+
+        print("X is: ", self.camx)
+
+        print("Y is: ", self.camy)
+
+        print("Z is: ", self.z)
+
+        print("----------------------------------")
+
+        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")
+
+
+
 
 class Tracker:
+
     def __init__(self, camera: Camera, config: Config, tracked_type):
         self.camera = camera
         self.width, self.height = camera.get_resolution()
@@ -198,6 +230,7 @@ class Tracker:
                     min_loc = (-1, -1)
                     min_id = -1
                     min_width = -1
+                    min_height = -1
 
 
                     for track in self.tracker.tracker.tracks:
@@ -223,10 +256,11 @@ class Tracker:
                                 min_loc = (center_x, center_y)
                                 min_id = track_id
                                 min_width = abs(x2 - x1)
+                                min_height = abs(y2 - y1)
                 
                     if min_id != -1:
 
-                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, self.tracked_Type , self.config.vision.K, self.config)
+                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, min_height, self.tracked_Type , self.config.vision.K, self.config)
 
                         self.state = TrackerState.TRACK
                         print("Switching state: INIT -> TRACK")
@@ -262,7 +296,7 @@ class Tracker:
                         if track_id == self.tracked_obj.ids[-1]:
                             found_track = True
 
-                            self.tracked_obj.update(center_x, center_y, abs(x2 - x1))
+                            self.tracked_obj.update(center_x, center_y, abs(x2 - x1), abs(y2 - y1))
 
                             cv2.circle(frame, (center_x, center_y), radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
                         
@@ -308,6 +342,7 @@ class Tracker:
                 min_loc = (-1, -1)
                 min_id = -1
                 min_width = -1
+                min_height = -1
 
                 for track in self.tracker.tracker.tracks:
                     if track.is_confirmed():
@@ -333,9 +368,10 @@ class Tracker:
                                 min_loc = (center_x, center_y)
                                 min_id = track_id
                                 min_width = abs(x2 - x1)
+                                min_height = abs(y2 - y1)
                 
                 if min_id != -1:
-                    self.tracked_obj.update(min_loc[0], min_loc[1], min_width)
+                    self.tracked_obj.update(min_loc[0], min_loc[1], min_width, min_height)
                     self.tracked_obj.id_update(min_id)
                     cv2.circle(frame, (min_loc[0], min_loc[1]), radius=5, color=(0, 255, 0), thickness=-1)  # red filled circle
 
@@ -369,9 +405,9 @@ class Tracker:
 
                 self.tracked_obj.update(x_new, y_new, self.tracked_obj.width)'''
 
-                desired_pos = np.array(self.config.robot.default_desired_rel_pos) - np.array(self.config.robot.cam_rel_offset)
+                
 
-                self.tracked_obj.update(desired_pos[0], desired_pos[1], desired_pos[2])
+                self.tracked_obj.default()
 
 
             # Display the frame in a window

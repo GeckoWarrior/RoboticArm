@@ -5,7 +5,7 @@ from config import Config
 
 config = Config()
 
-camera = Camera("robot")
+camera = Camera("laptop")
 camera.setup()
 
 tracker = Tracker(camera, config, "tennis_ball")

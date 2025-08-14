@@ -505,15 +505,15 @@ class Tracker:
                             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
                             cv2.circle(frame, (center_x, center_y), radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
                         
-                        # Draw track ID text
-                        text = f"ID: {track_id}"
-                        font = cv2.FONT_HERSHEY_SIMPLEX
-                        font_scale = 0.6
-                        thickness = 2
-                        text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
-                        text_x = center_x - text_size[0] // 2
-                        text_y = center_y + text_size[1] // 2
-                        cv2.putText(frame, text, (text_x, text_y), font, font_scale, (0, 255, 0), thickness, cv2.LINE_AA)
+                            # Draw track ID text
+                            text = f"ID: {track_id}"
+                            font = cv2.FONT_HERSHEY_SIMPLEX
+                            font_scale = 0.6
+                            thickness = 2
+                            text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
+                            text_x = center_x - text_size[0] // 2
+                            text_y = center_y + text_size[1] // 2
+                            cv2.putText(frame, text, (text_x, text_y), font, font_scale, (0, 255, 0), thickness, cv2.LINE_AA)
 
 
             if not found_track:

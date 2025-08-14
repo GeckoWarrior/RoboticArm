@@ -61,29 +61,95 @@ def screen_to_camera_coords(u, v, z, K):
 
 
 
+
+def Point_In(rect, x, y):
+    if rect is None:
+        return False
+    x1, y1, x2, y2 = rect
+    return (x1 <= x <= x2) and (y1 <= y <= y2)
+
+
+def Compute_Button_Rects(frame):
+    """Return (manual_rect, auto_rect) as (x1,y1,x2,y2), sized by frame."""
+    h, w = frame.shape[:2]
+    btn_w = int(0.28 * w)
+    btn_h = int(0.12 * h)
+    gap   = int(0.04 * w)
+    y1    = int(0.08 * h)
+
+    cx = w // 2
+    # manual on the left of center, automatic on the right
+    man_x1 = cx - gap//2 - btn_w
+    man_y1 = y1
+    man_x2 = man_x1 + btn_w
+    man_y2 = man_y1 + btn_h
+
+    auto_x1 = cx + gap//2
+    auto_y1 = y1
+    auto_x2 = auto_x1 + btn_w
+    auto_y2 = auto_y1 + btn_h
+    return (man_x1, man_y1, man_x2, man_y2), (auto_x1, auto_y1, auto_x2, auto_y2)
+
+
+
 # Define states using Enum
 class TrackerState(Enum):
-    INIT = 1
-    TRACK = 2
-    RETRACK = 3
+    INIT_CHOOSE = 1
+    INIT_MANUAL = 2
+    INIT_AUTOMATIC = 3
+    TRACK = 4
+    RETRACK = 5
 
 class TrackedObj:
-    def __init__(self, id: int, x: int, y: int, width: int, height: int, type, K, config: Config):
-        self.ids = [id]
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+    def __init__(self, K, config, type, id=None, x=None, y=None, width=None, height=None):
         self.K = np.array(K)
-
         self.config = config
 
         if type == "tennis_ball":
-            self.real_diameter = self.config.vision.tennis_diameter
+                self.real_diameter = self.config.vision.tennis_diameter
 
-        self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
 
-        self.camx, self.camy, z = screen_to_camera_coords(self.x, self.y, self.z, self.K)
+        if id == None:
+            self.ids = []
+
+            self.x = None
+            self.y = None
+            self.width = None
+            self.height = None
+            
+            desired_pos = np.array(self.config.robot.default_desired_rel_pos) - np.array(self.config.robot.cam_rel_offset)
+            self.z = desired_pos[2]
+            self.camx = desired_pos[0]
+            self.camy = desired_pos[1]
+            
+
+        else:
+            self.ids = [id]
+            self.x = x
+            self.y = y
+            self.width = width
+            self.height = height
+
+            self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
+
+            self.camx, self.camy, z = screen_to_camera_coords(self.x, self.y, self.z, self.K)
+
+        
+        
+            
+        '''print("----------------------------------")
+
+        print("X is: ", self.camx)
+
+        print("Y is: ", self.camy)
+
+        print("Z is: ", self.z)
+
+        print("----------------------------------")
+
+        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")'''
+
+
     
     def update(self, x, y, width, height):
         self.x = x
@@ -94,7 +160,7 @@ class TrackedObj:
         self.z = Detector.estimate_depth_from_bbox(max(self.width, self.height), self.real_diameter, self.K)
         self.camx, self.camy, z = screen_to_camera_coords(x, y, self.z, self.K)
 
-        print("----------------------------------")
+        '''print("----------------------------------")
 
         print("X is: ", self.camx)
 
@@ -104,7 +170,7 @@ class TrackedObj:
 
         print("----------------------------------")
 
-        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")
+        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")'''
     
     
     
@@ -126,7 +192,7 @@ class TrackedObj:
 
         
         
-        print("----------------------------------")
+        '''print("----------------------------------")
 
         print("X is: ", self.camx)
 
@@ -136,7 +202,7 @@ class TrackedObj:
 
         print("----------------------------------")
 
-        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")
+        print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")'''
 
 
 
@@ -151,9 +217,11 @@ class Tracker:
         self.model = Detector()
 
 
-        self.state = TrackerState.INIT  # Initialize with INIT state
+        self.state = TrackerState.INIT_CHOOSE  # Initialize with INIT state
 
-        self.tracked_obj = None
+        self.tracked_obj = TrackedObj(config.vision.K, config, tracked_type)
+
+
         self.tracked_Type = tracked_type
 
         self.tracker = DeepSort(max_age=1)
@@ -165,9 +233,67 @@ class Tracker:
 
         self.warmup_frames = 0
 
+        self.window_name = "Live Feed"
+
+        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)  # ensure the window exists
+        cv2.setMouseCallback(self.window_name, self._on_mouse)  # set callback once
+        self._manual_rect = None
+        self._auto_rect = None
+
+        self.reset_rect = (10, 10, 150, 50)
+
+        self.track_rects = []
+
+
+    def _on_mouse(self, event, x, y, flags, param=None):
+        # Only react in INIT_CHOOSE and only if click is inside a button
+        if event == cv2.EVENT_LBUTTONDOWN and self.state == TrackerState.INIT_CHOOSE:
+            if Point_In(self._manual_rect, x, y):
+                print("Switching state: INIT_CHOOSE -> INIT_MANUAL")
+                self.state = TrackerState.INIT_MANUAL
+                self._manual_rect = None
+                self._auto_rect   = None
+            elif Point_In(self._auto_rect, x, y):
+                print("Switching state: INIT_CHOOSE -> INIT_AUTOMATIC")
+                self.state = TrackerState.INIT_AUTOMATIC
+                self._manual_rect = None
+                self._auto_rect   = None 
+
+        elif event == cv2.EVENT_LBUTTONDOWN and self.state == TrackerState.INIT_MANUAL:
+              found_rect = False
+              for rect, id in self.track_rects:
+                  if not found_rect:
+                      if Point_In(rect, x, y):
+                        x1, y1, x2, y2 = rect
+
+                        # Calculate center of the track bounding box
+                        center_x = int(x1 + abs(x2 - x1) / 2)
+                        center_y = int(y1 + abs(y2 - y1) / 2)
+
+                        self.tracked_obj = TrackedObj(self.config.vision.K, self.config, self.tracked_Type, id, center_x, center_y, abs(x2 - x1), abs(y2 -y1))
+
+                        print("Switching state: INIT_MANUAL -> TRACK")
+                        print("With id: ", self.tracked_obj.ids[-1])
+                        self.state = TrackerState.TRACK
+
+                        found_rect = True
 
         
+        elif event == cv2.EVENT_LBUTTONDOWN and (self.state == TrackerState.TRACK or self.state == TrackerState.RETRACK):
+              if Point_In(self.reset_rect, x, y):
 
+                self.tracked_obj.default()
+                
+                if self.state == TrackerState.TRACK:
+                    print("Switching state: TRACK -> INIT_CHOOSE")
+                else:
+                    print("Switching state: RETRACK -> INIT_CHOOSE")
+
+                self.state = TrackerState.INIT_CHOOSE
+                          
+
+    
+    
     def update(self):
 
         self.warmup_frames += 1
@@ -217,12 +343,79 @@ class Tracker:
             #Draw the bounding box
             x1, y1 = int(left), int(top)
             x2, y2 = int(left + width), int(top + height)
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
+            #cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
 
 
         self.tracker.update_tracks(detections, frame=frame)
 
-        if self.state == TrackerState.INIT:
+         # ---- INIT_CHOOSE logic ----
+        if self.state == TrackerState.INIT_CHOOSE:
+            # compute & store rects for this frame size
+            self._manual_rect, self._auto_rect = Compute_Button_Rects(frame)
+
+            # draw Manual box
+            mx1, my1, mx2, my2 = self._manual_rect
+            cv2.rectangle(frame, (mx1, my1), (mx2, my2), (255, 0, 0), 2)
+            cv2.putText(frame, "Manual", (mx1 + 20, my1 +  int(0.65*(my2-my1))),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+
+            # draw Automatic box
+            ax1, ay1, ax2, ay2 = self._auto_rect
+            cv2.rectangle(frame, (ax1, ay1), (ax2, ay2), (0, 0, 255), 2)
+            cv2.putText(frame, "Automatic", (ax1 + 20, ay1 + int(0.65*(ay2-ay1))),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+
+            cv2.imshow(self.window_name, frame)
+            cv2.waitKey(1)
+            return True
+
+            
+
+        
+        if self.state == TrackerState.INIT_MANUAL:
+            if self.warmup_frames >= 4:
+                self.track_rects = []
+
+                for track in self.tracker.tracker.tracks:
+                    if track.is_confirmed():
+                        
+                        x1, y1, x2, y2 = track.to_tlbr()
+                        track_id = track.track_id
+
+                        # Calculate center of the track bounding box
+                        center_x = int(x1 + abs(x2 - x1) / 2)
+                        center_y = int(y1 + abs(y2 - y1) / 2)
+
+                        # Calculate the center of the frame
+                        frame_center_x = self.width / 2
+                        frame_center_y = self.height / 2
+
+                        self.track_rects.append(((x1, y1, x2, y2), track_id))
+
+
+                        cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
+           
+
+            cv2.putText(
+                frame,
+                "Choose object to track",
+                (20, 40),  # Position (x, y)
+                cv2.FONT_HERSHEY_SIMPLEX,  # Font
+                1.0,  # Font scale
+                (0, 255, 255),  # Color (Yellow)
+                2,  # Thickness
+                cv2.LINE_AA
+            )
+            
+            cv2.imshow(self.window_name, frame)
+            cv2.waitKey(1)
+            return True
+
+        
+        
+        
+        if self.state == TrackerState.INIT_AUTOMATIC:
             if self.warmup_frames >= 4:
 
                 if len(results) != 0:
@@ -260,10 +453,10 @@ class Tracker:
                 
                     if min_id != -1:
 
-                        self.tracked_obj = TrackedObj(min_id, min_loc[0], min_loc[1], min_width, min_height, self.tracked_Type , self.config.vision.K, self.config)
+                        self.tracked_obj = TrackedObj(self.config.vision.K, self.config, self.tracked_Type, min_id, min_loc[0], min_loc[1], min_width, min_height)
 
                         self.state = TrackerState.TRACK
-                        print("Switching state: INIT -> TRACK")
+                        print("Switching state: INIT_AUTOMATIC -> TRACK")
                         print("With id: ", self.tracked_obj.ids[-1])
 
             # Display the frame in a window
@@ -276,9 +469,19 @@ class Tracker:
             return True
         
 
+        if self.state == TrackerState.TRACK or self.state == TrackerState.RETRACK:
+            # Draw the red "return" button at the top of the frame
+            button_x1, button_y1 = 10, 10
+            button_x2, button_y2 = 150, 50
+
+            
+            cv2.rectangle(frame, (button_x1, button_y1), (button_x2, button_y2), (0, 0, 255), 3)  # Red outline
+            cv2.putText(frame, "return", (button_x1 + 20, button_y1 + 28),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
 
 
-
+        
+        
         if self.state == TrackerState.TRACK:
 
             found_track = False
@@ -298,6 +501,8 @@ class Tracker:
 
                             self.tracked_obj.update(center_x, center_y, abs(x2 - x1), abs(y2 - y1))
 
+
+                            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)  # Green box
                             cv2.circle(frame, (center_x, center_y), radius=5, color=(0, 0, 255), thickness=-1)  # red filled circle
                         
                         # Draw track ID text

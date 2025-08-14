@@ -16,3 +16,17 @@ while True:
     if not tracker.update():
         print("done")
         break
+
+    x, y, z, rx, ry, rz = tracker.get_target_rel_pose(5)
+
+    print("----------------------------------")
+
+    print("X is: ", x)
+
+    print("Y is: ", y)
+
+    print("Z is: ", z)
+
+    print("----------------------------------")
+
+    print("=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-")

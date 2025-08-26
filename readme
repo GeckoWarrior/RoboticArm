@@ -3,16 +3,27 @@ RoboticArm/
 ├── main.py                  # Entry point — high-level orchestration
 │
 ├── control/                 # All robot-related code
-│   ├── __init__.py
-│   ├── robot_interface.py   # OOP class wrapping RTDE control/receive
+│   ├── robot_interface.py   # Wrapper for the RTDE control/receive
+│   ├── robot_simulator.py   # Simulates a robotic arm, with a the same interface (for debugging / testing)
 │   ├── robot_controller.py  # Higher-level logic (e.g., follow target pose)
-│   └── motion_model.py      # Smooth interpolation, velocity planning
+│   └── motion_model.py      # Velocity planning based on the target position
+│   └── ...
 │
 ├── vision/                  # All image processing & pose estimation
-│   ├── __init__.py
 │   ├── tracker.py           # Object tracking / pose estimation
 │   └── camera_interface.py  # Abstraction over camera input
+│   └── ...
 │
 └── utils/                   # General helpers
-    ├── timing.py            # TimeSync, dt calculation, etc.
+    ├── timing.py            # dt calculations
     └── transforms.py        # Coordinate system utilities, quaternions, etc.
+
+
+Robotic arms are increasingly finding their place in medical environments, assisting surgeons with tasks that require precision, stability, and endurance beyond human capability. 
+From automated tool handling to steady illumination, such systems can enhance both accuracy and efficiency in critical procedures.
+
+In this project, we present an end-to-end system for vision-based object tracking with the Universal Robots UR5e, equipped with a mounted camera. 
+The arm continuously follows and centers a target in its field of view, enabling applications such as maintaining a spotlight on surgical tools or keeping the surgeon’s working area perfectly illuminated. 
+Our approach combines computer vision, real-time control, and robotic kinematics to deliver smooth, responsive tracking suitable for demanding medical contexts.
+
+Keywords: Robotic arm, UR5e, object tracking, computer vision, camera-based control, real-time tracking, automation.

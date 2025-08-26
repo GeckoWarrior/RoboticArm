@@ -54,7 +54,7 @@ class PositionalMotionModel:
         if dist < 0.01:
             max_lin = 0
 
-        # Locking / Jiggle prevention
+        # Normalize velocity
         norm = math.sqrt(sum(v ** 2 for v in v_linear))
         if norm > max_lin and norm > 1e-8:
             scale = max_lin / norm

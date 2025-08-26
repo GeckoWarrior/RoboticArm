@@ -6,17 +6,18 @@ RoboticArm/
 │   ├── robot_interface.py   # Wrapper for the RTDE control/receive
 │   ├── robot_simulator.py   # Simulates a robotic arm, with a the same interface (for debugging / testing)
 │   ├── robot_controller.py  # Higher-level logic (e.g., follow target pose)
-│   └── motion_model.py      # Velocity planning based on the target position
+│   ├─ motion_model.py       # Velocity planning based on the target position
 │   └── ...
 │
 ├── vision/                  # All image processing & pose estimation
 │   ├── tracker.py           # Object tracking / pose estimation
-│   └── camera_interface.py  # Abstraction over camera input
+│   ├── camera_interface.py  # Abstraction over camera input
 │   └── ...
 │
 └── utils/                   # General helpers
     ├── timing.py            # dt calculations
-    └── transforms.py        # Coordinate system utilities, quaternions, etc.
+    ├── transforms.py        # Coordinate system utilities, quaternions, etc.
+    └── visualizer_pyvista.py# 3D realtime visualizer
 
 
 Robotic arms are increasingly finding their place in medical environments, assisting surgeons with tasks that require precision, stability, and endurance beyond human capability. 
